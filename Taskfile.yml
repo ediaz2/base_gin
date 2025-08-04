@@ -1,0 +1,77 @@
+version: '3'
+
+vars:
+  APP_NAME: tic_tac_boom
+  APP_PATH: ./cmd/tic_tac_boom
+  BUILD_DIR: ./build
+
+tasks:
+  # Development tasks
+  dev:
+    desc: 'Run the application in development mode with live reload'
+    deps: [install]
+    cmds:
+      - air -c .air.toml
+
+  run:
+    desc: 'Run the application'
+    deps: [install]
+    cmds:
+      - go run {{.APP_PATH}}/main.go
+
+  # Build tasks
+  build:
+    desc: 'Build the application'
+    deps: [install]
+    cmds:
+      - mkdir -p {{.BUILD_DIR}}
+      - go build -o {{.BUILD_DIR}}/{{.APP_NAME}} {{.APP_PATH}}/main.go
+
+  # Dependencies
+  install:
+    desc: 'Install Go dependencies'
+    cmds:
+      - go mod download
+      - go mod tidy
+
+  # Testing
+  test:
+    desc: 'Run tests'
+    cmds:
+      - go test -v ./...
+
+  test-coverage:
+    desc: 'Run tests with coverage'
+    cmds:
+      - go test -v -coverprofile=coverage.out ./...
+      - go tool cover -html=coverage.out -o coverage.html
+
+  # Linting and formatting
+  lint:
+    desc: 'Run golangci-lint'
+    cmds:
+      - golangci-lint run
+
+  fmt:
+    desc: 'Format Go code'
+    cmds:
+      - go fmt ./...
+
+  # Cleaning
+  clean:
+    desc: 'Clean build artifacts'
+    cmds:
+      - rm -rf {{.BUILD_DIR}}
+      - rm -f coverage.out coverage.html
+
+  # Health check
+  health:
+    desc: 'Check if the application is healthy'
+    cmds:
+      - curl -f http://localhost:8080/health || echo "Application is not running"
+
+  # Default task
+  default:
+    desc: 'Show available tasks'
+    cmds:
+      - task --list
